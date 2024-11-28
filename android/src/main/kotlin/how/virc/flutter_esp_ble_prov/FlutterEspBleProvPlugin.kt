@@ -115,55 +115,65 @@ class CallContext(val call: MethodCall, val result: Result) {
  */
 class PermissionManager(val boss: Boss) : PluginRegistry.RequestPermissionsResultListener {
 
-  lateinit var callback: (Boolean) -> Unit
+    private val callbacks = mutableMapOf<Int, (Boolean) -> Unit>()
+    private var lastCallbackId = 0
 
-  val callbacks = mutableMapOf<Int, (Boolean) -> Unit>()
-  var lastCallbackId = 0
+    /**
+     * Required permissions for the current version of the SDK.
+     */
+    val permissions: Array<String>
+        get() {
+            println("inside permission manager")
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                )
+            } else {
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.BLUETOOTH,
+                    Manifest.permission.BLUETOOTH_ADMIN
+                )
+            }
+        }
 
-  /**
-   * Required permissions for the current version of the SDK.
-   */
-  val permissions: Array<String>
-    get() {
-      println("inside permission manager")
-      // https://developer.android.com/guide/topics/connectivity/bluetooth/permissions
-      return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
-      } else {
-        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN)
-      }
+    /**
+     * Check permissions are granted and request them otherwise.
+     */
+    fun ensure(fCallback: (Boolean) -> Unit) {
+        println("permission manager check")
+        val toRequest = permissions.filter {
+            ActivityCompat.checkSelfPermission(boss.platformActivity, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (toRequest.isNotEmpty()) {
+            boss.d("Requesting permissions: $toRequest")
+            val callbackId = ++lastCallbackId
+            callbacks[callbackId] = fCallback
+            ActivityCompat.requestPermissions(boss.platformActivity, toRequest.toTypedArray(), callbackId)
+        } else {
+            boss.d("All permissions are already granted")
+            fCallback(true)
+        }
     }
 
-  /**
-   * Check permissions are granted and request them otherwise.
-   */
-  fun ensure(fCallback: (Boolean) -> Unit) {
-    println("permission manager check")
-    callback = fCallback
-    val toRequest: MutableList<String> = mutableListOf()
-    for (p in permissions) {
-      if (ActivityCompat.checkSelfPermission(boss.platformActivity, p) != PackageManager.PERMISSION_GRANTED) {
-        toRequest.add(p)
-      }
+    /**
+     * Called on permission request result.
+     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ): Boolean {
+        boss.d("Permission result for requestCode $requestCode: $grantResults")
+        val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+        callbacks[requestCode]?.invoke(allGranted)
+        callbacks.remove(requestCode)
+        return true
     }
-    if (toRequest.size > 0) {
-      ActivityCompat.requestPermissions(boss.platformActivity, toRequest.toTypedArray(), 0)
-    } else {
-      fCallback(true)
-    }
-  }
-
-  /**
-   * Called on permission request result.
-   */
-  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
-    boss.d("permission result")
-    if (this::callback.isInitialized) {
-      callback(true)
-    }
-    return true
-  }
 }
+
 
 
 abstract class ActionManager(val boss: Boss) {
