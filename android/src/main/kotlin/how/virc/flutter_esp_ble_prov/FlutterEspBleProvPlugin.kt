@@ -295,16 +295,16 @@ class BleScanManager(boss: Boss) : ActionManager(boss) {
     //checkAndRequestBluetoothPermissions()
     boss.d("searchBleEspDevices: start")
     val prefix = ctx.arg("prefix") ?: return
-     if (!isBluetoothEnabled()) {
-        Log.e("Bluetooth", "Bluetooth is OFF or not supported")
-        // Prompt the user to enable Bluetooth
-        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+    //  if (!isBluetoothEnabled()) {
+    //     Log.e("Bluetooth", "Bluetooth is OFF or not supported")
+    //     // Prompt the user to enable Bluetooth
+    //     val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+    //     activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
 
-        // Wait for user to enable Bluetooth before proceeding
-        ctx.result.error("BLUETOOTH_DISABLED", "Prompted user to enable Bluetooth", null)
-        return
-    }
+    //     // Wait for user to enable Bluetooth before proceeding
+    //     ctx.result.error("BLUETOOTH_DISABLED", "Prompted user to enable Bluetooth", null)
+    //     return
+    // }
 
     boss.espManager.searchBleEspDevices(prefix, object : BleScanListener {
       override fun scanStartFailed() {
