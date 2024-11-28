@@ -29,7 +29,7 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 33
-    namespace "how.virc.flutter_esp_ble_prov""
+    namespace "how.virc.flutter_esp_ble_prov"
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
