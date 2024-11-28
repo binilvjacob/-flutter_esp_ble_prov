@@ -28,8 +28,8 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 31
-    namespace "com.example.flutter_esp_ble_prov"
+    compileSdkVersion 33
+    namespace "how.virc.flutter_esp_ble_prov""
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
