@@ -141,38 +141,22 @@ class PermissionManager(val boss: Boss) : PluginRegistry.RequestPermissionsResul
     /**
      * Check permissions are granted and request them otherwise.
      */
-    fun ensure(fCallback: (Boolean) -> Unit) {
-
- val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        if (bluetoothAdapter == null) {
-            boss.d("Bluetooth not supported")
-            fCallback(false)
-            return
-        }
-
-        if (!bluetoothAdapter.isEnabled) {
-            boss.d("Bluetooth is OFF, prompting user to enable it")
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
-            fCallback(false)
-            return
-        }
-
-        println("permission manager check")
-        val toRequest = permissions.filter {
-            ActivityCompat.checkSelfPermission(boss.platformActivity, it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (toRequest.isNotEmpty()) {
-            boss.d("Requesting permissions: $toRequest")
-            val callbackId = ++lastCallbackId
-            callbacks[callbackId] = fCallback
-            ActivityCompat.requestPermissions(boss.platformActivity, toRequest.toTypedArray(), callbackId)
-        } else {
-            boss.d("All permissions are already granted")
-            fCallback(true)
-        }
+   fun ensure(fCallback: (Boolean) -> Unit) {
+    val toRequest = permissions.filter {
+        ActivityCompat.checkSelfPermission(boss.platformActivity, it) != PackageManager.PERMISSION_GRANTED
     }
+
+    if (toRequest.isNotEmpty()) {
+        boss.d("Requesting permissions: $toRequest")
+        val callbackId = ++lastCallbackId
+        callbacks[callbackId] = fCallback
+        ActivityCompat.requestPermissions(boss.platformActivity, toRequest.toTypedArray(), callbackId)
+    } else {
+        boss.d("All permissions are already granted")
+        fCallback(true)
+    }
+}
+
 
     /**
      * Called on permission request result.
@@ -301,60 +285,63 @@ class Boss {
 }
 
 
-class BleScanManager(boss: Boss) : ActionManager(boss) {
+class BleScanManager(val boss: Boss) : ActionManager(boss) {
+    private val REQUEST_ENABLE_BT = 1
 
-   private val REQUEST_ENABLE_BT = 1
-
-   fun requestEnableBluetooth(activity: Activity) {
-        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+    fun requestEnableBluetooth(activity: Activity, callback: (Boolean) -> Unit) {
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         if (bluetoothAdapter != null && !bluetoothAdapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+            callback(false) // Notify the caller to wait for user action
+        } else {
+            callback(true) // Bluetooth is already enabled
         }
     }
 
- fun isBluetoothEnabled(): Boolean {
-        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-        return bluetoothAdapter?.isEnabled ?: false
-    }
-
-  @SuppressLint("MissingPermission")
-  override fun call(ctx: CallContext) {
-    //checkAndRequestBluetoothPermissions()
-    boss.d("searchBleEspDevices: start")
-    val prefix = ctx.arg("prefix") ?: return
-
-     if (!isBluetoothEnabled()) {
+    override fun call(ctx: CallContext) {
+        if (!isBluetoothEnabled()) {
             Log.e("Bluetooth", "Bluetooth is OFF or not supported")
-           // ctx.result.error("BLUETOOTH_DISABLED", "Bluetooth is not enabled", null)
-            return
+            requestEnableBluetooth(boss.platformActivity) { enabled ->
+                if (enabled) {
+                    startScan(ctx)
+                } else {
+                    ctx.result.error("BLUETOOTH_DISABLED", "Bluetooth is not enabled", null)
+                }
+            }
+        } else {
+            startScan(ctx)
         }
+    }
 
-    boss.espManager.searchBleEspDevices(prefix, object : BleScanListener {
-      override fun scanStartFailed() {
-        Log.e("BLE Scan", "Failed to start BLE scan")
-        ctx.result.error("BLE_SCAN_FAILED", "Failed to start BLE scan", null)
-      }
+    private fun startScan(ctx: CallContext) {
+        boss.d("searchBleEspDevices: start")
+        val prefix = ctx.arg("prefix") ?: return
+        boss.espManager.searchBleEspDevices(prefix, object : BleScanListener {
+            override fun scanStartFailed() {
+                Log.e("BLE Scan", "Failed to start BLE scan")
+                ctx.result.error("BLE_SCAN_FAILED", "Failed to start BLE scan", null)
+            }
 
-      override fun onPeripheralFound(device: BluetoothDevice?, scanResult: ScanResult?) {
-        device ?: return
-        scanResult ?: return
-        boss.devices.put(device.name, BleConnector(device, scanResult))
-      }
+            override fun onPeripheralFound(device: BluetoothDevice?, scanResult: ScanResult?) {
+                device ?: return
+                scanResult ?: return
+                boss.devices.put(device.name, BleConnector(device, scanResult))
+            }
 
-      override fun scanCompleted() {
-        ctx.result.success(ArrayList<String>(boss.devices.keys))
-        boss.d("searchBleEspDevices: scanComplete")
-      }
+            override fun scanCompleted() {
+                ctx.result.success(ArrayList<String>(boss.devices.keys))
+                boss.d("searchBleEspDevices: scanComplete")
+            }
 
-      override fun onFailure(e: java.lang.Exception?) {
-        TODO("Not yet implemented")
-      }
-
-    })
-  }
-
+            override fun onFailure(e: java.lang.Exception?) {
+                Log.e("BLE Scan", "Error during BLE scan: ${e?.message}")
+                ctx.result.error("BLE_SCAN_ERROR", e?.message, null)
+            }
+        })
+    }
 }
+
 
 class WifiScanManager(boss: Boss) : ActionManager(boss) {
   override fun call(ctx: CallContext) {
@@ -487,10 +474,22 @@ class FlutterEspBleProvPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     activityBinding?.let { tearDown(it) }
   }
 
-  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
     Log.d(logTag, "onActivityResult $requestCode $resultCode $data")
+    if (requestCode == BleScanManager.REQUEST_ENABLE_BT) {
+        if (resultCode == Activity.RESULT_OK) {
+            Log.d(logTag, "Bluetooth enabled")
+            // Notify BLE manager or retry the pending action
+            return true
+        } else {
+            Log.e(logTag, "Bluetooth enabling denied")
+            // Handle the case where the user denies enabling Bluetooth
+            return false
+        }
+    }
     return false
-  }
+}
+
 
   private fun init(binding: ActivityPluginBinding) {
     activityBinding = binding;
