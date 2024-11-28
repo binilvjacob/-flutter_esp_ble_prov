@@ -295,6 +295,13 @@ class BleScanManager(boss: Boss) : ActionManager(boss) {
     //checkAndRequestBluetoothPermissions()
     boss.d("searchBleEspDevices: start")
     val prefix = ctx.arg("prefix") ?: return
+
+if (activity == null) {
+    Log.e("Bluetooth", "Activity context is null")
+    ctx.result.error("INVALID_CONTEXT", "Activity context is required for enabling Bluetooth", null)
+    return
+}
+
     //  if (!isBluetoothEnabled()) {
     //     Log.e("Bluetooth", "Bluetooth is OFF or not supported")
     //     // Prompt the user to enable Bluetooth
