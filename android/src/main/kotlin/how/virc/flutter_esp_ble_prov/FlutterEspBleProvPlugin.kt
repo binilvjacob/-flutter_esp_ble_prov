@@ -298,7 +298,7 @@ class BleScanManager(boss: Boss) : ActionManager(boss) {
 
 if (activity == null) {
     Log.e("Bluetooth", "Activity context is null")
-    ctx.result.error("INVALID_CONTEXT", "Activity context is required for enabling Bluetooth", null)
+   // ctx.result.error("INVALID_CONTEXT", "Activity context is required for enabling Bluetooth", null)
     return
 }
 
