@@ -275,7 +275,7 @@ class BleScanManager(boss: Boss) : ActionManager(boss) {
 
   @SuppressLint("MissingPermission")
   override fun call(ctx: CallContext) {
-    checkAndRequestBluetoothPermissions()
+    //checkAndRequestBluetoothPermissions()
     boss.d("searchBleEspDevices: start")
     val prefix = ctx.arg("prefix") ?: return
 
