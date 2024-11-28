@@ -29,41 +29,41 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
-private val REQUEST_CODE_BLUETOOTH_PERMISSIONS = 1001
+// private val REQUEST_CODE_BLUETOOTH_PERMISSIONS = 1001
 
-private fun checkAndRequestBluetoothPermissions() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val permissions = arrayOf(
-            Manifest.permission.BLUETOOTH_SCAN,
-            Manifest.permission.BLUETOOTH_CONNECT
-        )
-        val missingPermissions = permissions.filter {
-            ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
-        }
-        if (missingPermissions.isNotEmpty()) {
-            ActivityCompat.requestPermissions(
-                activity,
-                missingPermissions.toTypedArray(),
-                REQUEST_CODE_BLUETOOTH_PERMISSIONS
-            )
-        }
-    }
-}
+// private fun checkAndRequestBluetoothPermissions() {
+//     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+//         val permissions = arrayOf(
+//             Manifest.permission.BLUETOOTH_SCAN,
+//             Manifest.permission.BLUETOOTH_CONNECT
+//         )
+//         val missingPermissions = permissions.filter {
+//             ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+//         }
+//         if (missingPermissions.isNotEmpty()) {
+//             ActivityCompat.requestPermissions(
+//                 activity,
+//                 missingPermissions.toTypedArray(),
+//                 REQUEST_CODE_BLUETOOTH_PERMISSIONS
+//             )
+//         }
+//     }
+// }
 
-override fun onRequestPermissionsResult(
-    requestCode: Int,
-    permissions: Array<out String>,
-    grantResults: IntArray
-) {
-    if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSIONS) {
-        if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            // Permissions granted, proceed with Bluetooth operations
-        } else {
-            // Handle the case where permissions are not granted
-        }
-    }
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-}
+// override fun onRequestPermissionsResult(
+//     requestCode: Int,
+//     permissions: Array<out String>,
+//     grantResults: IntArray
+// ) {
+//     if (requestCode == REQUEST_CODE_BLUETOOTH_PERMISSIONS) {
+//         if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+//             // Permissions granted, proceed with Bluetooth operations
+//         } else {
+//             // Handle the case where permissions are not granted
+//         }
+//     }
+//     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+// }
 
 
 
