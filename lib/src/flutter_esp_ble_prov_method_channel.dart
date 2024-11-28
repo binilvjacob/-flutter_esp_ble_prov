@@ -18,6 +18,12 @@ class MethodChannelFlutterEspBleProv extends FlutterEspBleProvPlatform {
 
   @override
   Future<List<String>> scanBleDevices(String prefix) async {
+      final isBluetoothOn =
+      await methodChannel.invokeMethod<bool>('isBluetoothOn');
+
+  if (isBluetoothOn == null || !isBluetoothOn) {
+    throw Exception("Bluetooth is not enabled. Please enable Bluetooth.");
+  }
     final args = {'prefix': prefix};
     final raw =
         await methodChannel.invokeMethod<List<Object?>>('scanBleDevices', args);
