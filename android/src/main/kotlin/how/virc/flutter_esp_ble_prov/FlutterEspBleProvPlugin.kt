@@ -235,14 +235,14 @@ class Boss {
 
 class BleScanManager(boss: Boss) : ActionManager(boss) {
 
-  // @SuppressLint("MissingPermission")
+  @SuppressLint("MissingPermission")
   override fun call(ctx: CallContext) {
     boss.d("searchBleEspDevices: start")
     val prefix = ctx.arg("prefix") ?: return
 
     boss.espManager.searchBleEspDevices(prefix, object : BleScanListener {
       override fun scanStartFailed() {
-        Log.e("BLE Scan", "Failed to start BLE scan",BleScanListener)
+        Log.e("BLE Scan", "Failed to start BLE scan")
       }
 
       override fun onPeripheralFound(device: BluetoothDevice?, scanResult: ScanResult?) {
