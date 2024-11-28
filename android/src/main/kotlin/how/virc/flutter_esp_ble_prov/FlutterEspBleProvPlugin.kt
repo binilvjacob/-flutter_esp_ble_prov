@@ -28,7 +28,12 @@ import io.flutter.plugin.common.PluginRegistry
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import android.bluetooth.BluetoothAdapter
 
+fun isBluetoothEnabled(): Boolean {
+    val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+    return bluetoothAdapter?.isEnabled ?: false
+}
 // private val REQUEST_CODE_BLUETOOTH_PERMISSIONS = 1001
 
 // private fun checkAndRequestBluetoothPermissions() {
@@ -278,6 +283,11 @@ class BleScanManager(boss: Boss) : ActionManager(boss) {
     //checkAndRequestBluetoothPermissions()
     boss.d("searchBleEspDevices: start")
     val prefix = ctx.arg("prefix") ?: return
+    if (isBluetoothEnabled()) {
+    println("Bluetooth is ON")
+} else {
+    println("Bluetooth is OFF or not supported")
+}
 
     boss.espManager.searchBleEspDevices(prefix, object : BleScanListener {
       override fun scanStartFailed() {
