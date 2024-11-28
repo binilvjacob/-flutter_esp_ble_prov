@@ -125,6 +125,7 @@ class PermissionManager(val boss: Boss) : PluginRegistry.RequestPermissionsResul
    */
   val permissions: Array<String>
     get() {
+      println("inside permission manager")
       // https://developer.android.com/guide/topics/connectivity/bluetooth/permissions
       return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
