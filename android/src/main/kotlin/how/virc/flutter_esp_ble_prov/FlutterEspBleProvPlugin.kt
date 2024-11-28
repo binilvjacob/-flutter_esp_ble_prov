@@ -242,7 +242,7 @@ class BleScanManager(boss: Boss) : ActionManager(boss) {
 
     boss.espManager.searchBleEspDevices(prefix, object : BleScanListener {
       override fun scanStartFailed() {
-        Log.e("BLE Scan", "Failed to start BLE scan")
+        Log.e("BLE Scan", "Failed to start BLE scan",BleScanListener)
       }
 
       override fun onPeripheralFound(device: BluetoothDevice?, scanResult: ScanResult?) {
