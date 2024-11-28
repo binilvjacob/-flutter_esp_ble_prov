@@ -117,6 +117,7 @@ class PermissionManager(val boss: Boss) : PluginRegistry.RequestPermissionsResul
 
     private val callbacks = mutableMapOf<Int, (Boolean) -> Unit>()
     private var lastCallbackId = 0
+    private val REQUEST_ENABLE_BT = 1
 
     /**
      * Required permissions for the current version of the SDK.
@@ -140,9 +141,29 @@ class PermissionManager(val boss: Boss) : PluginRegistry.RequestPermissionsResul
 
     /**
      * Check permissions are granted and request them otherwise.
+     * Also, prompt the user to enable Bluetooth if it is turned off.
      */
-    fun ensure(fCallback: (Boolean) -> Unit) {
+    fun ensure(activity: Activity, fCallback: (Boolean) -> Unit) {
         println("permission manager check")
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+
+        // Check if Bluetooth is supported
+        if (bluetoothAdapter == null) {
+            boss.d("Bluetooth is not supported on this device")
+            fCallback(false)
+            return
+        }
+
+        // Check if Bluetooth is enabled
+        if (!bluetoothAdapter.isEnabled) {
+            boss.d("Bluetooth is OFF, prompting user to enable it")
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+            fCallback(false) // Wait for the user to enable Bluetooth
+            return
+        }
+
+        // Check and request permissions
         val toRequest = permissions.filter {
             ActivityCompat.checkSelfPermission(boss.platformActivity, it) != PackageManager.PERMISSION_GRANTED
         }
@@ -173,6 +194,7 @@ class PermissionManager(val boss: Boss) : PluginRegistry.RequestPermissionsResul
         return true
     }
 }
+
 
 
 
