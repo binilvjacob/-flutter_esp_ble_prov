@@ -235,7 +235,7 @@ class Boss {
 
 class BleScanManager(boss: Boss) : ActionManager(boss) {
 
-  @SuppressLint("MissingPermission")
+  // @SuppressLint("MissingPermission")
   override fun call(ctx: CallContext) {
     boss.d("searchBleEspDevices: start")
     val prefix = ctx.arg("prefix") ?: return
