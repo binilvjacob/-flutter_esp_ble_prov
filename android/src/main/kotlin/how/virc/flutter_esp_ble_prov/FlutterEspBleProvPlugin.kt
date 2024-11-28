@@ -275,25 +275,41 @@ class Boss {
 
 class BleScanManager(boss: Boss) : ActionManager(boss) {
 
-fun isBluetoothEnabled(): Boolean {
-    val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-    return bluetoothAdapter?.isEnabled ?: false
-}
+   private val REQUEST_ENABLE_BT = 1
+
+   fun requestEnableBluetooth(activity: Activity) {
+        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+        if (bluetoothAdapter != null && !bluetoothAdapter.isEnabled) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+        }
+    }
+
+ fun isBluetoothEnabled(): Boolean {
+        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+        return bluetoothAdapter?.isEnabled ?: false
+    }
 
   @SuppressLint("MissingPermission")
   override fun call(ctx: CallContext) {
     //checkAndRequestBluetoothPermissions()
     boss.d("searchBleEspDevices: start")
     val prefix = ctx.arg("prefix") ?: return
-    if (isBluetoothEnabled()) {
-    println("Bluetooth is ON")
-} else {
-    println("Bluetooth is OFF or not supported")
-}
+     if (!isBluetoothEnabled()) {
+        Log.e("Bluetooth", "Bluetooth is OFF or not supported")
+        // Prompt the user to enable Bluetooth
+        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+
+        // Wait for user to enable Bluetooth before proceeding
+        ctx.result.error("BLUETOOTH_DISABLED", "Prompted user to enable Bluetooth", null)
+        return
+    }
 
     boss.espManager.searchBleEspDevices(prefix, object : BleScanListener {
       override fun scanStartFailed() {
         Log.e("BLE Scan", "Failed to start BLE scan")
+        ctx.result.error("BLE_SCAN_FAILED", "Failed to start BLE scan", null)
       }
 
       override fun onPeripheralFound(device: BluetoothDevice?, scanResult: ScanResult?) {
