@@ -299,7 +299,7 @@ class BleScanManager(boss: Boss) : ActionManager(boss) {
 
      if (!isBluetoothEnabled()) {
             Log.e("Bluetooth", "Bluetooth is OFF or not supported")
-            ctx.result.error("BLUETOOTH_DISABLED", "Bluetooth is not enabled", null)
+           // ctx.result.error("BLUETOOTH_DISABLED", "Bluetooth is not enabled", null)
             return
         }
 
