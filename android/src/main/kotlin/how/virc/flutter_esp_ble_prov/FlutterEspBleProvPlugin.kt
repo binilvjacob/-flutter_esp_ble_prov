@@ -137,6 +137,7 @@ class PermissionManager(val boss: Boss) : PluginRegistry.RequestPermissionsResul
    * Check permissions are granted and request them otherwise.
    */
   fun ensure(fCallback: (Boolean) -> Unit) {
+    println("permission manager check")
     callback = fCallback
     val toRequest: MutableList<String> = mutableListOf()
     for (p in permissions) {
